@@ -3,7 +3,6 @@ import {
   Calendar,
   Building2,
   Clock,
-  AlertTriangle,
   CheckCircle2,
   ExternalLink,
   RefreshCw,
@@ -91,7 +90,6 @@ export function CoordinatorInterface() {
     if (!selectedEvent) return;
     setActionLoading(true);
 
-    // Map "revision" to "needs_revision" to satisfy the database check constraint
     const dbStatus = status === "revision" ? "needs_revision" : status;
 
     const { error } = await supabase
@@ -209,7 +207,6 @@ export function CoordinatorInterface() {
       {/* ── RIGHT COLUMN: Detail & Decision Pane ── */}
       {selectedEvent ? (
         <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#0B132B]">
-          {/* Header */}
           <div className="p-7 border-b border-white/10 bg-[#0E1733] flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-1">
@@ -292,7 +289,7 @@ export function CoordinatorInterface() {
             </div>
           </div>
 
-          {/* ── Fixed Decision Footer Actions ── */}
+          {/* Fixed Decision Footer Actions */}
           <div className="p-5 border-t border-white/10 bg-[#0E1733] flex items-center justify-end gap-3">
             <button
               onClick={() => handleUpdateStatus("rejected")}
@@ -324,7 +321,7 @@ export function CoordinatorInterface() {
         </div>
       )}
 
-      {/* ── Revision Notes Dialog ── */}
+      {/* Revision Modal */}
       {showRevisionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-[#16203D] border border-white/15 rounded-2xl p-6 shadow-2xl">
