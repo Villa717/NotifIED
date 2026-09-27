@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import FacilitatorInterface from "./components/FacilitatorInterface";
+import { FacilitatorInterface } from "./components/FacilitatorInterface";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
