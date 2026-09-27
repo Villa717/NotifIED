@@ -58,7 +58,7 @@ export default function CoordinatorView() {
         </div>
 
         <div className="w-full max-w-[420px] bg-white rounded-3xl p-8 shadow-xl border border-slate-100 text-center">
-          <h1 className="text-2xl font-serif font-bold text-slate-900 mb-1">Coordinator Login</h1>
+          <h1 className="text-2xl font-serif font-bold text-slate-900 mb-1">Admin Login</h1>
           <p className="text-xs text-slate-500 mb-6">Review, clear, and publish campus event proposals.</p>
 
           <form onSubmit={handleLogin} className="text-left space-y-4">
