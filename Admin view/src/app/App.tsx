@@ -10,8 +10,13 @@ import {
   Eye,
   EyeOff,
   LogOut,
+  AlertCircle,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+
+// Designated prototype coordinator credentials (or accept any valid @apc.edu.ph staff/admin email)
+const VALID_ADMIN_EMAIL = "coordinator@apc.edu.ph";
+const VALID_ADMIN_PASSWORD = "adminpassword123";
 
 export interface EventRecord {
   event_id: number;
@@ -36,17 +41,74 @@ export default function CoordinatorView() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Check saved session or prefill saved email on load
+  useEffect(() => {
+    const savedSession = localStorage.getItem("notified_admin_logged_in");
+    const savedEmail = localStorage.getItem("notified_admin_remembered_email");
+
+    if (savedSession === "true") {
+      setIsLoggedIn(true);
+    }
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage("");
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    // 1. Validation checks
+    if (!trimmedEmail || !trimmedPassword) {
+      setErrorMessage("Please enter both email and password.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    // 2. Prototype Admin Credential Verification
+    // Accept either the default demo coordinator credentials or any @apc.edu.ph staff email
+    const isValid =
+      (trimmedEmail === VALID_ADMIN_EMAIL && trimmedPassword === VALID_ADMIN_PASSWORD) ||
+      (trimmedEmail.endsWith("@apc.edu.ph") && trimmedPassword.length >= 6);
+
+    if (!isValid) {
+      setErrorMessage(
+        "Invalid coordinator credentials. Use 'coordinator@apc.edu.ph' with password 'adminpassword123', or your @apc.edu.ph email (min. 6 characters)."
+      );
+      return;
+    }
+
+    // 3. Handle Remember Me & Session storage
+    if (rememberMe) {
+      localStorage.setItem("notified_admin_remembered_email", trimmedEmail);
+      localStorage.setItem("notified_admin_logged_in", "true");
+    } else {
+      localStorage.removeItem("notified_admin_remembered_email");
+      localStorage.removeItem("notified_admin_logged_in");
+    }
+
     setIsLoggedIn(true);
+    setPassword("");
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("notified_admin_logged_in");
     setIsLoggedIn(false);
-    setEmail("");
     setPassword("");
+    setErrorMessage("");
   };
 
   if (!isLoggedIn) {
@@ -59,7 +121,16 @@ export default function CoordinatorView() {
 
         <div className="w-full max-w-[420px] bg-white rounded-3xl p-8 shadow-xl border border-slate-100 text-center">
           <h1 className="text-2xl font-serif font-bold text-slate-900 mb-1">Admin Login</h1>
-          <p className="text-xs text-slate-500 mb-6">Review, clear, and publish campus event proposals.</p>
+          <p className="text-xs text-slate-500 mb-6">
+            Review, clear, and publish campus event proposals.
+          </p>
+
+          {errorMessage && (
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs text-left flex items-start gap-2">
+              <AlertCircle className="size-4 shrink-0 mt-0.5" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="text-left space-y-4">
             <div>
@@ -97,7 +168,12 @@ export default function CoordinatorView() {
 
             <div className="flex items-center justify-between text-xs pt-1">
               <label className="flex items-center gap-2 text-slate-600 cursor-pointer">
-                <input type="checkbox" className="rounded border-slate-300 text-blue-600" />
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-slate-300 text-blue-600 cursor-pointer"
+                />
                 Remember Me
               </label>
               <span className="text-blue-600 hover:underline font-medium cursor-pointer">
@@ -107,7 +183,7 @@ export default function CoordinatorView() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-[#0E1733] hover:bg-[#16203D] text-white text-sm font-bold transition-colors cursor-pointer"
+              className="w-full py-3 rounded-xl bg-[#0E1733] hover:bg-[#16203D] text-white text-sm font-bold transition-colors cursor-pointer mt-2"
             >
               Sign In to Coordinator Portal
             </button>
@@ -124,7 +200,11 @@ export default function CoordinatorView() {
 
           <button
             type="button"
-            onClick={() => setIsLoggedIn(true)}
+            onClick={() => {
+              // Simulated Microsoft SSO for rapid evaluation
+              setEmail("coordinator@apc.edu.ph");
+              setIsLoggedIn(true);
+            }}
             className="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <svg className="size-4" viewBox="0 0 21 21">
