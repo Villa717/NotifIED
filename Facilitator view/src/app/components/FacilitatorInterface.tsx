@@ -64,36 +64,38 @@ export function FacilitatorInterface({ onLogout }: { onLogout?: () => void }) {
 
   // 3. Submit Event to Database
 const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setSubmitting(true);
+    e.preventDefault();
+    setSubmitting(true);
 
-  // Exact columns from your public.events table
-  const payload = {
-    title: title.trim(),
-    venue: venue.trim(),
-    description: description.trim() || `Org: ${organization} | Date: ${date} (${startTime}-${endTime})`,
-    status: "pending",
-    external_registration_link: regLink || null,
-    facilitator_id: null,
+    const payload = {
+      title: title.trim(),
+      venue: venue.trim(),
+      description: description.trim(),
+      event_date: date, 
+      start_time: startTime || null,
+      end_time: endTime || null,
+      status: "pending",
+      external_registration_link: regLink || null,
+      facilitator_id: null,
+    };
+
+    const { error } = await supabase.from("events").insert([payload]);
+
+    if (error) {
+      alert(`Submission error: ${error.message}`);
+    } else {
+      alert("Proposal submitted successfully to the Database!");
+      setTitle("");
+      setDate("");
+      setStartTime("");
+      setEndTime("");
+      setVenue("");
+      setDescription("");
+      setRegLink("");
+      fetchMyEvents();
+    }
+    setSubmitting(false);
   };
-
-  const { error } = await supabase.from("events").insert([payload]);
-
-  if (error) {
-    alert(`Submission error: ${error.message}`);
-  } else {
-    alert("Proposal submitted successfully to the Database!");
-    setTitle("");
-    setDate("");
-    setStartTime("");
-    setEndTime("");
-    setVenue("");
-    setDescription("");
-    setRegLink("");
-    fetchMyEvents();
-  }
-  setSubmitting(false);
-};
 
   return (
     <div className="h-full w-full bg-[#0B132B] text-white flex flex-col overflow-y-auto">
