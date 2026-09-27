@@ -55,7 +55,7 @@ export default function App() {
 
     if (!isValid) {
       setErrorMessage(
-        "Invalid credentials. Use 'facilitator@organization.edu' with password 'password123', or your @apc.edu.ph email (min. 6 characters)."
+        "Invalid credentials!!"
       );
       return;
     }
