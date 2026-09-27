@@ -51,7 +51,7 @@ export default function App() {
     // Accept either the default demo credentials or any @apc.edu.ph institutional email
     const isValid =
       (trimmedEmail === VALID_FACILITATOR_EMAIL && trimmedPassword === VALID_PASSWORD) ||
-      (trimmedEmail.endsWith("@apc.edu.ph") && trimmedPassword.length >= 6);
+      (trimmedEmail.endsWith("@student.apc.edu.ph") && trimmedPassword.length >= 6);
 
     if (!isValid) {
       setErrorMessage(
