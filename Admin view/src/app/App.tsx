@@ -86,7 +86,7 @@ export default function CoordinatorView() {
 
     if (!isValid) {
       setErrorMessage(
-        "Invalid coordinator credentials. Use 'coordinator@apc.edu.ph' with password 'adminpassword123', or your @apc.edu.ph email (min. 6 characters)."
+        "Invalid coordinator credentials!!"
       );
       return;
     }
