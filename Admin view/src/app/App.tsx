@@ -1,30 +1,37 @@
 import { useState, useEffect } from "react";
 import {
-  Calendar, Building2, Clock, AlertTriangle, CheckCircle2,
-  ExternalLink, Download, Eye, XCircle, RefreshCw, Inbox
+  Calendar,
+  Building2,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  RefreshCw,
+  Inbox,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 export interface EventRecord {
-  id: number;
+  event_id: number;
   title: string;
-  organization: string;
+  organization?: string;
   event_date: string;
   start_time: string;
   end_time: string;
   venue: string;
   description: string;
-  tags: string[];
-  status: "pending" | "approved" | "revision" | "completed" | "rejected";
+  tags?: string[];
+  status: "pending" | "approved" | "revision" | "needs_revision" | "completed" | "rejected";
   admin_feedback?: string;
+  external_registration_link?: string;
   registration_link?: string;
   has_qr_code?: boolean;
   qr_code_url?: string;
   created_at?: string;
 }
 
-export default function App() {
-  // your component code
+export default function CoordinatorView({ onLogout }: { onLogout?: () => void }) {
+  return <CoordinatorInterface />;
 }
 
 export function CoordinatorInterface() {
@@ -41,14 +48,14 @@ export function CoordinatorInterface() {
     const { data, error } = await supabase
       .from("events")
       .select("*")
-      .order("id", { ascending: false });
+      .order("event_id", { ascending: false });
 
     if (error) {
       console.error("Error fetching queue from Supabase:", error.message);
     } else if (data) {
-      setEvents(data);
+      setEvents(data as EventRecord[]);
       if (data.length > 0 && !selectedEventId) {
-        setSelectedEventId(data[0].id);
+        setSelectedEventId(data[0].event_id);
       }
     }
     setLoading(false);
@@ -74,24 +81,31 @@ export function CoordinatorInterface() {
     };
   }, []);
 
-  const selectedEvent = events.find((e) => e.id === selectedEventId) || events[0];
+  const selectedEvent = events.find((e) => e.event_id === selectedEventId) || events[0];
 
   // 3. Status Action Handlers
-  const handleUpdateStatus = async (status: "approved" | "rejected" | "revision", feedback?: string) => {
+  const handleUpdateStatus = async (
+    status: "approved" | "rejected" | "revision",
+    feedback?: string
+  ) => {
     if (!selectedEvent) return;
     setActionLoading(true);
+
+    // Map "revision" to "needs_revision" to satisfy the database check constraint
+    const dbStatus = status === "revision" ? "needs_revision" : status;
 
     const { error } = await supabase
       .from("events")
       .update({
-        status,
+        status: dbStatus,
         admin_feedback: feedback || null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", selectedEvent.id);
+      .eq("event_id", selectedEvent.event_id);
 
     if (error) {
       console.error(`Failed to update status to ${status}:`, error.message);
+      alert(`Could not submit: ${error.message}`);
     } else {
       setShowRevisionModal(false);
       setRevisionFeedback("");
@@ -137,11 +151,11 @@ export function CoordinatorInterface() {
           )}
 
           {events.map((item) => {
-            const isSelected = selectedEvent?.id === item.id;
+            const isSelected = selectedEvent?.event_id === item.event_id;
             return (
               <div
-                key={item.id}
-                onClick={() => setSelectedEventId(item.id)}
+                key={item.event_id}
+                onClick={() => setSelectedEventId(item.event_id)}
                 className={`p-4 rounded-xl border transition-all cursor-pointer ${
                   isSelected
                     ? "bg-[#1C2541] border-[#FDB813] shadow-md"
@@ -156,23 +170,23 @@ export function CoordinatorInterface() {
                         ? "bg-blue-500/20 text-blue-400"
                         : item.status === "approved"
                         ? "bg-emerald-500/20 text-emerald-400"
-                        : item.status === "revision"
+                        : item.status === "revision" || item.status === "needs_revision"
                         ? "bg-amber-500/20 text-amber-400"
                         : "bg-red-500/20 text-red-400"
                     }`}
                   >
-                    {item.status}
+                    {item.status ? item.status.replace("_", " ") : "pending"}
                   </span>
                 </div>
 
-                <p className="text-xs text-[#8D99AE] mb-2">{item.organization}</p>
+                <p className="text-xs text-[#8D99AE] mb-2">{item.organization || "Student Org"}</p>
 
                 <div className="flex items-center gap-3 text-[11px] text-white/60 mb-2.5">
                   <span className="flex items-center gap-1">
-                    <Calendar className="size-3 text-[#FDB813]" /> {item.event_date}
+                    <Calendar className="size-3 text-[#FDB813]" /> {item.event_date || "No date set"}
                   </span>
                   <span className="flex items-center gap-1 truncate">
-                    <Building2 className="size-3 text-[#FDB813]" /> {item.venue}
+                    <Building2 className="size-3 text-[#FDB813]" /> {item.venue || "No venue"}
                   </span>
                 </div>
 
@@ -203,15 +217,15 @@ export function CoordinatorInterface() {
                   {selectedEvent.title}
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-blue-500/20 text-blue-400">
-                  {selectedEvent.status}
+                  {selectedEvent.status ? selectedEvent.status.replace("_", " ") : "pending"}
                 </span>
               </div>
-              <p className="text-sm text-[#8D99AE]">{selectedEvent.organization}</p>
+              <p className="text-sm text-[#8D99AE]">{selectedEvent.organization || "Student Org"}</p>
             </div>
           </div>
 
           <div className="p-7 space-y-7 flex-1">
-            {/* Event Details Grid */}
+            {/* Event Logistics Grid */}
             <div>
               <h3 className="text-xs font-bold text-[#8D99AE] uppercase tracking-wider mb-3">
                 Event Logistics
@@ -221,21 +235,21 @@ export function CoordinatorInterface() {
                   <p className="text-xs text-[#8D99AE] mb-1 flex items-center gap-1.5">
                     <Calendar className="size-3.5 text-[#FDB813]" /> Date
                   </p>
-                  <p className="text-sm font-semibold">{selectedEvent.event_date}</p>
+                  <p className="text-sm font-semibold">{selectedEvent.event_date || "No date set"}</p>
                 </div>
                 <div className="p-4 bg-[#16203D] rounded-xl border border-white/5">
                   <p className="text-xs text-[#8D99AE] mb-1 flex items-center gap-1.5">
                     <Clock className="size-3.5 text-[#FDB813]" /> Schedule
                   </p>
                   <p className="text-sm font-semibold">
-                    {selectedEvent.start_time} – {selectedEvent.end_time}
+                    {selectedEvent.start_time || "--"} – {selectedEvent.end_time || "--"}
                   </p>
                 </div>
                 <div className="p-4 bg-[#16203D] rounded-xl border border-white/5">
                   <p className="text-xs text-[#8D99AE] mb-1 flex items-center gap-1.5">
                     <Building2 className="size-3.5 text-[#FDB813]" /> Venue
                   </p>
-                  <p className="text-sm font-semibold truncate">{selectedEvent.venue}</p>
+                  <p className="text-sm font-semibold truncate">{selectedEvent.venue || "No venue"}</p>
                 </div>
               </div>
             </div>
@@ -250,7 +264,7 @@ export function CoordinatorInterface() {
               </div>
             </div>
 
-            {/* Promotional Assets */}
+            {/* Promotional Assets & Links */}
             <div>
               <h3 className="text-xs font-bold text-[#8D99AE] uppercase tracking-wider mb-3">
                 Promotional Assets
@@ -259,12 +273,14 @@ export function CoordinatorInterface() {
                 <div>
                   <p className="text-xs text-[#8D99AE] mb-0.5">Registration Link</p>
                   <p className="text-sm font-medium text-white truncate max-w-md">
-                    {selectedEvent.registration_link || "No external link provided"}
+                    {selectedEvent.external_registration_link ||
+                      selectedEvent.registration_link ||
+                      "No external link provided"}
                   </p>
                 </div>
-                {selectedEvent.registration_link && (
+                {(selectedEvent.external_registration_link || selectedEvent.registration_link) && (
                   <a
-                    href={selectedEvent.registration_link}
+                    href={selectedEvent.external_registration_link || selectedEvent.registration_link}
                     target="_blank"
                     rel="noreferrer"
                     className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-xs flex items-center gap-1.5 transition-colors"
