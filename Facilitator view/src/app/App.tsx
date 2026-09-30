@@ -55,7 +55,7 @@ export default function App() {
 
     if (!isValid) {
       setErrorMessage(
-        "Invalid credentials!!"
+        "Invalid email or password"
       );
       return;
     }

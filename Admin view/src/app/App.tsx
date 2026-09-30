@@ -86,7 +86,7 @@ export default function CoordinatorView() {
 
     if (!isValid) {
       setErrorMessage(
-        "Invalid coordinator credentials!!"
+        "Invalid email or password"
       );
       return;
     }
